@@ -1,6 +1,7 @@
 import Joi from 'joi';
 import Reply from '../../models/reply';
 import { mongoose } from 'mongoose';
+import Comment from '../../models/comment';
 
 const { ObjectId } = mongoose.Types;
 export const getReplyById = async (ctx, next) => {
@@ -81,17 +82,35 @@ export const write = async ctx => {
   }
 
   const { content } = ctx.request.body;
-  const reply = new Reply({
-    commentId: ctx.state.comment._id,
+  // const reply = new Reply({
+  //   commentId: ctx.state.comment._id,
+  //   content,
+  //   author: ctx.state.user
+  // });
+  const query = { _id: ctx.state.comment._id };
+  const reply = {
     content,
-    author: ctx.state.user
-  });
-  await Comment.findByIdAndUpdate(ctx.state.comment._id, {
-    reply: ctx.state.comment.reply + 1
-  }, { new: true }).exec();
+    author: ctx.state.user,
+    publishedDate: Date.now
+  }
+  const updateDocument = {
+    $push: {
+      reply
+    }
+  };
+  await Comment.updateOne(query, updateDocument);
+
+  // const reply = new Reply({
+  //   commentId: ctx.state.comment._id,
+  //   content,
+  //   author: ctx.state.user
+  // });
+  // await Comment.findByIdAndUpdate(ctx.state.comment._id, {
+  //   reply: ctx.state.comment.reply + 1
+  // }, { new: true }).exec();
 
   try {
-    await reply.save();
+    // await reply.save();
     ctx.response.body = reply;
   } catch (e) {
     ctx.throw(500, e);
